@@ -3,6 +3,7 @@ import { X, Database, Plus, Trash2, Sparkles, Download, Upload, FileDown, Settin
 import { CustomLibraries } from '../../types';
 import { getLibraryConfig } from '../../utils/helpers';
 import { getRandomEmoji, getSmartEmoji } from '../../utils/emojiGenerator';
+import { downloadJSON } from '../../utils/fileDownload';
 import EditItemModal from '../modals/EditItemModal';
 
 interface TaskEditorScreenProps {
@@ -226,25 +227,22 @@ const TaskEditorScreen: React.FC<TaskEditorScreenProps> = ({
   };
 
   // 导出当前库为 JSON 文件
-  const handleExportLibrary = () => {
+  const handleExportLibrary = async () => {
     const currentLibrary = (customLibraries as any)[currentLibraryKey];
     if (!currentLibrary) {
       alert('当前库没有数据！');
       return;
     }
 
-    const dataStr = JSON.stringify(currentLibrary, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${currentLibraryKey}_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const filename = `${currentLibraryKey}_${new Date().toISOString().slice(0, 10)}.json`;
     
-    console.log(`✅ ${currentLibraryKey} 已导出`);
+    try {
+      await downloadJSON(currentLibrary, filename);
+      console.log(`✅ ${currentLibraryKey} 已导出`);
+    } catch (error) {
+      console.error('导出失败:', error);
+      alert('导出失败，请重试！');
+    }
   };
 
   // 导入 JSON 文件 - 支持单个库或全部库
@@ -308,7 +306,7 @@ const TaskEditorScreen: React.FC<TaskEditorScreenProps> = ({
   };
 
   // 下载模板文件
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     const config = getLibraryConfig(currentLibraryKey);
     if (!config) return;
 
@@ -349,18 +347,15 @@ const TaskEditorScreen: React.FC<TaskEditorScreenProps> = ({
       template.female[subMode.key] = [exampleItem];
     });
 
-    const dataStr = JSON.stringify(template, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${currentLibraryKey}_template.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const filename = `${currentLibraryKey}_template.json`;
     
-    console.log(`✅ ${currentLibraryKey} 模板已下载`);
+    try {
+      await downloadJSON(template, filename);
+      console.log(`✅ ${currentLibraryKey} 模板已下载`);
+    } catch (error) {
+      console.error('下载模板失败:', error);
+      alert('下载失败，请重试！');
+    }
   };
 
   const renderInputs = () => {

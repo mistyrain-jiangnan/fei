@@ -33,10 +33,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-tr from-pink-400 to-rose-500 rounded-lg flex items-center justify-center shadow-lg shadow-pink-200 rotate-3">
-            <Heart className="text-white" size={24} fill="currentColor" />
+            <Heart className="text-white" size={20} fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-800 tracking-tight">甜蜜小工具</h1>
+            <h1 className="text-lg font-black text-gray-800 tracking-tight">甜蜜小工具</h1>
             <p className="text-gray-500 font-medium text-xs">多模式，更精彩</p>
           </div>
         </div>
@@ -70,7 +70,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
           onClick={() => setCurrentScreen('POMODORO')}
           className="w-full bg-blue-500/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-300 active:scale-95 transition-all flex items-center justify-between px-6"
         >
-          情侣番茄时钟 (自定义时长)
+          情侣番茄时钟
           <Clock size={20} />
         </button>
 
@@ -91,7 +91,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             isLibrariesLoading ? 'bg-gray-400' : 'bg-gray-700 hover:bg-gray-800 shadow-gray-300'
           }`}
         >
-          任务库管理 (新增/修改)
+          任务库管理
           {isLibrariesLoading ? <RefreshCw size={20} className='animate-spin' /> : <Database size={20} />}
         </button>
 

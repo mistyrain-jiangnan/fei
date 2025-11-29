@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">情侣甜蜜小工具</string>
+    <string name="title_activity_main">情侣甜蜜小工具</string>
+    <string name="package_name">com.couple.sweettools</string>
+    <string name="custom_url_scheme">com.couple.sweettools</string>
+</resources>

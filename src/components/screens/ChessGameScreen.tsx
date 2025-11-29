@@ -203,7 +203,7 @@ const ChessGameScreen: React.FC<ChessGameScreenProps> = ({
         className="w-full h-full grid gap-0.5 p-1 bg-gradient-to-br from-white to-gray-50 border-4 border-purple-300 rounded-3xl shadow-2xl"
         style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}
       >
-        {MAP_PATH.map((tile, index) => {
+        {MAP_PATH.map((_tile, index) => {
           const isStart = index === 0;
           const isEnd = index === TOTAL_STEPS - 1;
           
