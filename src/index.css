@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+.animate-blob {
+  animation: blob 7s infinite cubic-bezier(0.42, 0, 0.58, 1);
+}
+
+.animation-delay-2000 { 
+  animation-delay: 2s; 
+}
+
+.grid-cols-7 { 
+  grid-template-columns: repeat(7, minmax(0, 1fr)); 
+}
+
+.perspective-1000 { 
+  perspective: 1000px; 
+}
+
+.transform-style-3d { 
+  transform-style: preserve-3d; 
+}
+
+.backface-hidden { 
+  backface-visibility: hidden; 
+}
+
+.rotate-y-180 { 
+  transform: rotateY(180deg); 
+}
