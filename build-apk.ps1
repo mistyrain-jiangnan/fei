@@ -29,6 +29,38 @@ $javaVersion = & java -version 2>&1 | Select-Object -First 1
 Write-Host "[OK] Java found: $javaVersion" -ForegroundColor Green
 Write-Host ""
 
+# Auto-increment version
+Write-Host "Updating version number..." -ForegroundColor Yellow
+$gradleFile = "android\app\build.gradle"
+$gradleContent = Get-Content $gradleFile -Raw
+
+# Extract current versionCode and versionName
+if ($gradleContent -match 'versionCode (\d+)') {
+    $currentVersionCode = [int]$Matches[1]
+    $newVersionCode = $currentVersionCode + 1
+} else {
+    $newVersionCode = 1
+}
+
+if ($gradleContent -match 'versionName "(\d+\.\d+)"') {
+    $currentVersionName = $Matches[1]
+    $parts = $currentVersionName.Split('.')
+    $major = [int]$parts[0]
+    $minor = [int]$parts[1]
+    $minor++
+    $newVersionName = "$major.$minor"
+} else {
+    $newVersionName = "1.0"
+}
+
+# Update build.gradle
+$gradleContent = $gradleContent -replace 'versionCode \d+', "versionCode $newVersionCode"
+$gradleContent = $gradleContent -replace 'versionName "\d+\.\d+"', "versionName `"$newVersionName`""
+Set-Content $gradleFile -Value $gradleContent -NoNewline
+
+Write-Host "[OK] Version updated: v$currentVersionName (code $currentVersionCode) -> v$newVersionName (code $newVersionCode)" -ForegroundColor Green
+Write-Host ""
+
 # Step 1: Build Web App
 Write-Host "Step 1/3: Building Web App..." -ForegroundColor Yellow
 pnpm build
