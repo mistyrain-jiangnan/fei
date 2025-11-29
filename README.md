@@ -22,26 +22,58 @@
 ### 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 开发模式
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### 构建生产版本
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### 预览生产版本
 
 ```bash
-npm run preview
+pnpm run preview
 ```
+
+## 📱 Android 应用
+
+项目已配置 Capacitor,可以构建为 Android 原生应用!
+
+### 快速构建 Android 应用
+
+**Windows PowerShell:**
+```bash
+.\android-build.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x android-build.sh
+./android-build.sh
+```
+
+### 手动构建步骤
+
+```bash
+# 1. 构建 Web 应用
+pnpm build
+
+# 2. 同步到 Android
+pnpm run android:sync
+
+# 3. 打开 Android Studio
+pnpm run android:open
+```
+
+更多详细信息请查看 [Android 构建指南](./ANDROID_BUILD.md)
 
 ## 📦 技术栈
 

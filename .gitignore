@@ -22,3 +22,30 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Capacitor
+android/app/src/main/assets/public
+android/app/src/main/assets/capacitor.config.json
+ios/App/App/public
+ios/App/App/capacitor.config.json
+
+# Android Studio / Gradle
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Keystore files (重要:不要提交签名密钥!)
+*.keystore
+*.jks
+my-release-key.keystore
