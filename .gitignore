@@ -49,3 +49,4 @@ ios/App/App/capacitor.config.json
 *.keystore
 *.jks
 my-release-key.keystore
+.env
