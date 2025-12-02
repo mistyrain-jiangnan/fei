@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 
 // Components
-import HomeScreen from './components/screens/HomeScreen';
+import TabBar from './components/common/TabBar';
+import FeaturesScreen from './components/screens/FeaturesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
 import GlobalSettingsModal from './components/modals/GlobalSettingsModal';
 import TaskResultModal from './components/common/TaskResultModal';
 
 // Utils & Constants
 import { addIds } from './utils/helpers';
-import { 
-  saveToLocalStorage, 
-  loadFromLocalStorage, 
-  STORAGE_KEYS 
+import {
+  saveToLocalStorage,
+  loadFromLocalStorage,
+  STORAGE_KEYS
 } from './utils/localStorage';
 import {
   DEFAULT_TASK_LIBRARY,
@@ -20,6 +22,9 @@ import {
 
 // Types
 import { Player, Settings, CustomLibraries, ModalTask } from './types';
+
+// Services
+import { migrateDataToSupabase } from './services/migration';
 
 // 懒加载屏幕组件
 import { lazy, Suspense } from 'react';
@@ -38,10 +43,14 @@ const LoadingFallback = () => (
 );
 
 export default function App() {
+  // TabBar State
+  const [activeTab, setActiveTab] = useState<'features' | 'profile'>('features');
+
   // Application State
   const [currentScreen, setCurrentScreen] = useState<string>('HOME');
   const [gameStarted, setGameStarted] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [initializationDone, setInitializationDone] = useState(false);
 
   // Custom Libraries - 从 LocalStorage 加载
   const [customLibraries, setCustomLibraries] = useState<CustomLibraries>(() => {
@@ -71,6 +80,22 @@ export default function App() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [activeTask, setActiveTask] = useState<ModalTask | null>(null);
 
+  // 初始化应用
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // 尝试迁移数据到 Supabase
+        await migrateDataToSupabase();
+      } catch (error) {
+        console.log('Supabase 迁移失败，继续使用本地存储', error);
+      } finally {
+        setInitializationDone(true);
+      }
+    };
+
+    initApp();
+  }, []);
+
   // 当 customLibraries 改变时，保存到 LocalStorage
   useEffect(() => {
     saveToLocalStorage(STORAGE_KEYS.CUSTOM_LIBRARIES, customLibraries);
@@ -85,6 +110,15 @@ export default function App() {
   useEffect(() => {
     saveToLocalStorage(STORAGE_KEYS.PLAYERS, players);
   }, [players]);
+
+  // 当标签页改变时重置游戏屏幕
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      setCurrentScreen('PROFILE');
+    } else {
+      setCurrentScreen('HOME');
+    }
+  }, [activeTab]);
 
   // Game Control Functions
   const startGame = () => {
@@ -113,111 +147,135 @@ export default function App() {
 
   // Render Screen
   const renderScreen = () => {
-    switch (currentScreen) {
-      case 'HOME':
-        return (
-          <HomeScreen 
-            setCurrentScreen={setCurrentScreen}
-            gameStarted={gameStarted}
-            startGame={startGame}
-            resetGame={resetGame}
-            players={players}
-            showSettingsModal={() => setShowSettingsModal(true)}
-            isLibrariesLoading={false}
-          />
-        );
-      case 'TASK_EDITOR':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <TaskEditorScreen
+    // 如果当前在功能标签页
+    if (activeTab === 'features') {
+      switch (currentScreen) {
+        case 'HOME':
+          return (
+            <FeaturesScreen
               setCurrentScreen={setCurrentScreen}
-              customLibraries={customLibraries}
-              setCustomLibraries={setCustomLibraries}
-            />
-          </Suspense>
-        );
-      case 'CHESS_GAME':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <ChessGameScreen
-              setCurrentScreen={setCurrentScreen}
+              isLibrariesLoading={false}
+              gameStarted={gameStarted}
+              onStartGame={startGame}
+              onResetGame={resetGame}
               players={players}
-              setPlayers={setPlayers}
-              currentPlayerIndex={currentPlayerIndex}
-              setCurrentPlayerIndex={setCurrentPlayerIndex}
-              showTaskModal={showTaskModal}
-              resetGame={resetGame}
-              TASK_LIBRARY_DATA={customLibraries.TASK_LIBRARY}
-              POSITION_CARDS_DATA={customLibraries.POSITION_CARDS_LIBRARY}
-              PUNISHMENT_DATA={customLibraries.PUNISHMENT_LIBRARY}
-              settings={settings}
-              setSettings={setSettings}
             />
-          </Suspense>
-        );
-      case 'PUNISHMENT_GAME':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <PunishmentGameScreen
+          );
+        case 'TASK_EDITOR':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <TaskEditorScreen
+                setCurrentScreen={setCurrentScreen}
+                customLibraries={customLibraries}
+                setCustomLibraries={setCustomLibraries}
+              />
+            </Suspense>
+          );
+        case 'CHESS_GAME':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <ChessGameScreen
+                setCurrentScreen={setCurrentScreen}
+                players={players}
+                setPlayers={setPlayers}
+                currentPlayerIndex={currentPlayerIndex}
+                setCurrentPlayerIndex={setCurrentPlayerIndex}
+                showTaskModal={showTaskModal}
+                resetGame={resetGame}
+                TASK_LIBRARY_DATA={customLibraries.TASK_LIBRARY}
+                POSITION_CARDS_DATA={customLibraries.POSITION_CARDS_LIBRARY}
+                PUNISHMENT_DATA={customLibraries.PUNISHMENT_LIBRARY}
+                settings={settings}
+                setSettings={setSettings}
+              />
+            </Suspense>
+          );
+        case 'PUNISHMENT_GAME':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <PunishmentGameScreen
+                setCurrentScreen={setCurrentScreen}
+                PUNISHMENT_DATA={customLibraries.PUNISHMENT_LIBRARY}
+              />
+            </Suspense>
+          );
+        case 'POSITION_CARDS':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <PositionCardsScreen
+                setCurrentScreen={setCurrentScreen}
+                POSITION_CARDS_DATA={customLibraries.POSITION_CARDS_LIBRARY}
+              />
+            </Suspense>
+          );
+        case 'POMODORO':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <PomodoroScreen
+                setCurrentScreen={setCurrentScreen}
+                settings={settings}
+                setSettings={setSettings}
+              />
+            </Suspense>
+          );
+        default:
+          return (
+            <FeaturesScreen
               setCurrentScreen={setCurrentScreen}
-              PUNISHMENT_DATA={customLibraries.PUNISHMENT_LIBRARY}
+              isLibrariesLoading={false}
+              gameStarted={gameStarted}
+              onStartGame={startGame}
+              onResetGame={resetGame}
+              players={players}
             />
-          </Suspense>
-        );
-      case 'POSITION_CARDS':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <PositionCardsScreen
-              setCurrentScreen={setCurrentScreen}
-              POSITION_CARDS_DATA={customLibraries.POSITION_CARDS_LIBRARY}
-            />
-          </Suspense>
-        );
-      case 'POMODORO':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <PomodoroScreen
-              setCurrentScreen={setCurrentScreen}
-              settings={settings}
-              setSettings={setSettings}
-            />
-          </Suspense>
-        );
-      default:
-        return (
-          <HomeScreen
-            setCurrentScreen={setCurrentScreen}
-            gameStarted={gameStarted}
-            startGame={startGame}
-            resetGame={resetGame}
-            players={players}
-            showSettingsModal={() => setShowSettingsModal(true)}
-            isLibrariesLoading={false}
-          />
-        );
+          );
+      }
+    }
+
+    // 如果当前在个人标签页
+    if (activeTab === 'profile') {
+      return (
+        <ProfileScreen
+          players={players}
+          settings={settings}
+          onUpdate={() => {
+            setInitializationDone(false);
+            setTimeout(() => setInitializationDone(true), 500);
+          }}
+        />
+      );
     }
   };
 
+  if (!initializationDone) {
+    return <LoadingFallback />;
+  }
+
   return (
     <>
-      {renderScreen()}
-      
-      {/* Task Result Modal - Only in CHESS_GAME mode */}
-      {currentScreen === 'CHESS_GAME' && activeTask && (
-        <TaskResultModal
-          task={activeTask}
-          onClose={closeTaskModal}
-          onTaskCompleted={nextTurn}
+      <div className="max-w-md mx-auto bg-white min-h-screen relative">
+        {renderScreen()}
+
+        {/* Task Result Modal - Only in CHESS_GAME mode */}
+        {currentScreen === 'CHESS_GAME' && activeTask && (
+          <TaskResultModal
+            task={activeTask}
+            onClose={closeTaskModal}
+            onTaskCompleted={nextTurn}
+          />
+        )}
+
+        {/* Global Settings Modal */}
+        <GlobalSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          players={players}
+          setPlayers={setPlayers}
         />
-      )}
-      
-      {/* Global Settings Modal */}
-      <GlobalSettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        players={players}
-        setPlayers={setPlayers}
-      />
+
+        {/* TabBar Navigation */}
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     </>
   );
 }

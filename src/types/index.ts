@@ -88,6 +88,8 @@ export interface Settings {
     break: number;
   };
   chessDifficulty: Difficulty;
+  boardRows?: number;
+  boardCols?: number;
 }
 
 // 模态框任务类型

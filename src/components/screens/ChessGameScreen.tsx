@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, RefreshCw, Zap, Flame } from 'lucide-react';
 import Modal from '../common/Modal';
 import { Player, Settings, TaskLibrary, PositionCardsLibrary, PunishmentLibrary, ModalTask, Role } from '../../types';
-import { TOTAL_STEPS, GRID_COLS, TASK_TRIGGER_CHANCE } from '../../constants';
+import { TOTAL_STEPS, GRID_COLS, GRID_ROWS, TASK_TRIGGER_CHANCE } from '../../constants';
 import { generateMapPath } from '../../utils/helpers';
 
 // 导入骰子 GIF 图片
@@ -14,7 +14,6 @@ import dice5Gif from '../../images/sifter5.gif';
 import dice6Gif from '../../images/sifter6.gif';
 
 const DICE_GIFS = [dice1Gif, dice2Gif, dice3Gif, dice4Gif, dice5Gif, dice6Gif];
-const MAP_PATH = generateMapPath(TOTAL_STEPS);
 
 interface ChessGameScreenProps {
   setCurrentScreen: (screen: string) => void;
@@ -31,26 +30,32 @@ interface ChessGameScreenProps {
   setSettings: React.Dispatch<React.SetStateAction<Settings>>;
 }
 
-const ChessGameScreen: React.FC<ChessGameScreenProps> = ({ 
-  setCurrentScreen, 
-  players, 
-  setPlayers, 
-  currentPlayerIndex, 
-  setCurrentPlayerIndex, 
-  showTaskModal, 
-  resetGame, 
+const ChessGameScreen: React.FC<ChessGameScreenProps> = ({
+  setCurrentScreen,
+  players,
+  setPlayers,
+  currentPlayerIndex,
+  setCurrentPlayerIndex,
+  showTaskModal,
+  resetGame,
   TASK_LIBRARY_DATA,
   POSITION_CARDS_DATA,
   PUNISHMENT_DATA,
-  settings, 
-  setSettings 
+  settings,
+  setSettings
 }) => {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
-  
+
   const currentPlayer = players[currentPlayerIndex];
   const difficultyKey = settings.chessDifficulty;
+
+  // 动态棋盘尺寸计算
+  const boardRows = settings.boardRows || GRID_ROWS;
+  const boardCols = settings.boardCols || GRID_COLS;
+  const DYNAMIC_TOTAL_STEPS = boardRows * boardCols;
+  const MAP_PATH = useMemo(() => generateMapPath(DYNAMIC_TOTAL_STEPS), [DYNAMIC_TOTAL_STEPS]);
 
   const difficultyName = difficultyKey === 'warmup' ? '热身' : 
                          difficultyKey === 'intimate' ? '亲昵' : 
@@ -76,7 +81,7 @@ const ChessGameScreen: React.FC<ChessGameScreenProps> = ({
   // 移动棋子逻辑
   const movePiece = (steps: number) => {
     const startPos = currentPlayer.pos;
-    const targetPos = Math.min(startPos + steps, TOTAL_STEPS - 1);
+    const targetPos = Math.min(startPos + steps, DYNAMIC_TOTAL_STEPS - 1);
     let currentStep = 0;
 
     const moveStep = () => {
@@ -84,25 +89,25 @@ const ChessGameScreen: React.FC<ChessGameScreenProps> = ({
         currentStep++;
         setPlayers(prevPlayers => {
           const newPlayers = [...prevPlayers];
-          newPlayers[currentPlayerIndex].pos = Math.min(startPos + currentStep, TOTAL_STEPS - 1);
+          newPlayers[currentPlayerIndex].pos = Math.min(startPos + currentStep, DYNAMIC_TOTAL_STEPS - 1);
           return newPlayers;
         });
-        
-        setTimeout(moveStep, 150); 
+
+        setTimeout(moveStep, 150);
       } else {
         const finalPos = targetPos;
-        
+
         // 检查是否获胜
-        if (finalPos === TOTAL_STEPS - 1) {
+        if (finalPos === DYNAMIC_TOTAL_STEPS - 1) {
           setTimeout(() => {
-            showTaskModal({ 
-              title: "游戏结束！", 
-              content: `${currentPlayer.name} 获胜！请为另一方准备一个小惊喜作为惩罚。`, 
-              icon: "🎉", 
-              isWinner: true 
+            showTaskModal({
+              title: "游戏结束！",
+              content: `${currentPlayer.name} 获胜！请为另一方准备一个小惊喜作为惩罚。`,
+              icon: "🎉",
+              isWinner: true
             });
           }, 500);
-          return; 
+          return;
         }
 
         // 随机任务触发
@@ -199,13 +204,13 @@ const ChessGameScreen: React.FC<ChessGameScreenProps> = ({
   
   const renderMap = () => {
     return (
-      <div 
+      <div
         className="w-full h-full grid gap-0.5 p-1 bg-gradient-to-br from-white to-gray-50 border-4 border-purple-300 rounded-3xl shadow-2xl"
-        style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${boardCols}, minmax(0, 1fr))` }}
       >
         {MAP_PATH.map((_tile, index) => {
           const isStart = index === 0;
-          const isEnd = index === TOTAL_STEPS - 1;
+          const isEnd = index === DYNAMIC_TOTAL_STEPS - 1;
           
           const playersOnTile = players.filter(p => p.pos === index);
           
