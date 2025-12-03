@@ -1,7 +1,7 @@
-import React from 'react';
-import { Users, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Sparkles, Settings } from 'lucide-react';
 import Modal from '../common/Modal';
-import { Player } from '../../types';
+import { Player, Settings as SettingsType } from '../../types';
 import { PLAYER_COLORS } from '../../constants';
 import { getRandomEmoji } from '../../utils/emojiGenerator';
 
@@ -10,18 +10,40 @@ interface GlobalSettingsModalProps {
   onClose: () => void;
   players: Player[];
   setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
+  settings: SettingsType;
+  setSettings: React.Dispatch<React.SetStateAction<SettingsType>>;
 }
 
-const GlobalSettingsModal: React.FC<GlobalSettingsModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  players, 
-  setPlayers 
+const GlobalSettingsModal: React.FC<GlobalSettingsModalProps> = ({
+  isOpen,
+  onClose,
+  players,
+  setPlayers,
+  settings,
+  setSettings
 }) => {
+  const [boardRows, setBoardRows] = useState(settings.boardRows || 8);
+  const [boardCols, setBoardCols] = useState(settings.boardCols || 9);
+  const [pomodoroFocus, setPomodoroFocus] = useState(settings.pomodoro.focus);
+  const [pomodoroBreak, setPomodoroBreak] = useState(settings.pomodoro.break);
+
   const handlePlayerChange = (index: number, field: keyof Player, value: string) => {
-    setPlayers(prev => prev.map((p, i) => 
+    setPlayers(prev => prev.map((p, i) =>
       i === index ? { ...p, [field]: value } : p
     ));
+  };
+
+  const handleSaveSettings = () => {
+    setSettings(prev => ({
+      ...prev,
+      boardRows,
+      boardCols,
+      pomodoro: {
+        focus: pomodoroFocus,
+        break: pomodoroBreak
+      }
+    }));
+    onClose();
   };
 
   return (
@@ -86,13 +108,78 @@ const GlobalSettingsModal: React.FC<GlobalSettingsModalProps> = ({
             </div>
           </div>
         ))}
+
+        {/* 棋盘设置 */}
+        <h4 className="text-sm font-bold text-gray-600 border-b pb-2 flex items-center gap-2 mt-4">
+          <Settings size={16} /> 飞行棋棋盘设置
+        </h4>
+        <div className="space-y-3 bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-700">行数（5-15）</label>
+              <input
+                type="number"
+                min="5"
+                max="15"
+                value={boardRows}
+                onChange={(e) => setBoardRows(parseInt(e.target.value) || 8)}
+                className="w-full mt-1 p-2 border border-blue-300 rounded-md text-center text-sm text-gray-900"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-700">列数（5-15）</label>
+              <input
+                type="number"
+                min="5"
+                max="15"
+                value={boardCols}
+                onChange={(e) => setBoardCols(parseInt(e.target.value) || 9)}
+                className="w-full mt-1 p-2 border border-blue-300 rounded-md text-center text-sm text-gray-900"
+              />
+            </div>
+          </div>
+          <div className="text-xs text-gray-600 bg-white p-2 rounded border border-blue-200">
+            总格子数: <span className="font-bold text-blue-600">{boardRows * boardCols}</span>
+          </div>
+        </div>
+
+        {/* 番茄时钟设置 */}
+        <h4 className="text-sm font-bold text-gray-600 border-b pb-2 flex items-center gap-2 mt-4">
+          <Settings size={16} /> 番茄时钟设置
+        </h4>
+        <div className="space-y-3 bg-orange-50 p-3 rounded-lg border border-orange-200">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-700">专注时间（分钟）</label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={pomodoroFocus}
+                onChange={(e) => setPomodoroFocus(parseInt(e.target.value) || 25)}
+                className="w-full mt-1 p-2 border border-orange-300 rounded-md text-center text-sm text-gray-900"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-700">休息时间（分钟）</label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={pomodoroBreak}
+                onChange={(e) => setPomodoroBreak(parseInt(e.target.value) || 5)}
+                className="w-full mt-1 p-2 border border-orange-300 rounded-md text-center text-sm text-gray-900"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-      <button 
-        onClick={onClose}
+      <button
+        onClick={handleSaveSettings}
         className="w-full mt-6 bg-pink-500 text-white font-bold py-3 rounded-xl hover:bg-pink-600 transition-colors"
       >
-        保存并返回
+        保存所有设置
       </button>
     </Modal>
   );

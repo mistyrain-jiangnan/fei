@@ -19,8 +19,8 @@ const FeaturesScreen: React.FC<FeaturesScreenProps> = ({
   players
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 pb-24">
-      <div className="max-w-md mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50">
+      <div className="mx-auto px-4 py-6">
         {/* 标题 */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">

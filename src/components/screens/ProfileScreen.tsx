@@ -7,15 +7,16 @@ import { gameHistoryService } from '../../services/database';
 interface ProfileScreenProps {
   players: Player[];
   settings: SettingsType;
+  setSettings: React.Dispatch<React.SetStateAction<SettingsType>>;
   onUpdate: () => void;
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ players, settings, onUpdate }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ players, settings, setSettings }) => {
   const [gameStats, setGameStats] = useState<any>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
-  const [boardRows, setBoardRows] = useState(8);
-  const [boardCols, setBoardCols] = useState(9);
+  const [boardRows, setBoardRows] = useState(settings.boardRows || 8);
+  const [boardCols, setBoardCols] = useState(settings.boardCols || 9);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,8 +59,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ players, settings, onUpda
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 pb-24">
-      <div className="max-w-md mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+      <div className="mx-auto px-4 py-6">
         {/* 玩家信息卡片 */}
         <div className="bg-white rounded-3xl shadow-lg p-6 mb-6 border border-gray-100">
           <h2 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2">
@@ -233,7 +234,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ players, settings, onUpda
 
           <button
             onClick={() => {
-              onUpdate();
+              setSettings(prev => ({
+                ...prev,
+                boardRows,
+                boardCols
+              }));
               setShowSettingsModal(false);
             }}
             className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold rounded-xl hover:shadow-lg transition-all"

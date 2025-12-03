@@ -24,7 +24,7 @@ import {
 import { Player, Settings, CustomLibraries, ModalTask } from './types';
 
 // Services
-import { migrateDataToSupabase } from './services/migration';
+import { playerService, settingsService } from './services/database';
 
 // 懒加载屏幕组件
 import { lazy, Suspense } from 'react';
@@ -50,7 +50,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<string>('HOME');
   const [gameStarted, setGameStarted] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [initializationDone, setInitializationDone] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Custom Libraries - 从 LocalStorage 加载
   const [customLibraries, setCustomLibraries] = useState<CustomLibraries>(() => {
@@ -66,6 +66,8 @@ export default function App() {
     return loadFromLocalStorage(STORAGE_KEYS.SETTINGS, {
       pomodoro: { focus: 25, break: 5 },
       chessDifficulty: 'warmup' as const,
+      boardRows: 8,
+      boardCols: 9,
     });
   });
 
@@ -80,16 +82,56 @@ export default function App() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [activeTask, setActiveTask] = useState<ModalTask | null>(null);
 
-  // 初始化应用
+  // 初始化应用 - 从 Supabase 加载数据
   useEffect(() => {
     const initApp = async () => {
       try {
-        // 尝试迁移数据到 Supabase
-        await migrateDataToSupabase();
+        console.log('正在从 Supabase 加载数据...');
+
+        // 加载玩家配置
+        const profile = await playerService.getOrCreateProfile();
+        if (profile) {
+          const playersData: Player[] = [
+            {
+              id: 0,
+              name: profile.player1_name || "哥哥",
+              avatar: profile.player1_avatar || "👦",
+              pos: 0,
+              color: "bg-blue-500",
+              gender: (profile.player1_gender as 'male' | 'female') || "male"
+            },
+            {
+              id: 1,
+              name: profile.player2_name || "妹妹",
+              avatar: profile.player2_avatar || "👧",
+              pos: 0,
+              color: "bg-pink-500",
+              gender: (profile.player2_gender as 'male' | 'female') || "female"
+            }
+          ];
+          setPlayers(playersData);
+        }
+
+        // 加载游戏设置
+        const gameSettings = await settingsService.getOrCreateSettings();
+        if (gameSettings) {
+          setSettings({
+            pomodoro: {
+              focus: gameSettings.pomodoro_focus,
+              break: gameSettings.pomodoro_break
+            },
+            chessDifficulty: gameSettings.chess_difficulty as 'warmup' | 'intimate' | 'adventure',
+            boardRows: gameSettings.board_rows,
+            boardCols: gameSettings.board_cols
+          });
+        }
+
+        console.log('✅ 数据加载完成');
       } catch (error) {
-        console.log('Supabase 迁移失败，继续使用本地存储', error);
+        console.error('❌ 从 Supabase 加载数据失败:', error);
+        console.log('将继续使用本地存储的数据');
       } finally {
-        setInitializationDone(true);
+        setIsLoading(false);
       }
     };
 
@@ -101,15 +143,36 @@ export default function App() {
     saveToLocalStorage(STORAGE_KEYS.CUSTOM_LIBRARIES, customLibraries);
   }, [customLibraries]);
 
-  // 当 settings 改变时，保存到 LocalStorage
+  // 当 settings 改变时，保存到 LocalStorage 和 Supabase
   useEffect(() => {
     saveToLocalStorage(STORAGE_KEYS.SETTINGS, settings);
-  }, [settings]);
 
-  // 当 players 改变时，保存到 LocalStorage
+    // 同步到 Supabase
+    if (!isLoading) {
+      settingsService.updateSettings({
+        chess_difficulty: settings.chessDifficulty,
+        pomodoro_focus: settings.pomodoro.focus,
+        pomodoro_break: settings.pomodoro.break,
+        board_rows: settings.boardRows || 8,
+        board_cols: settings.boardCols || 9
+      }).catch(error => console.error('更新设置失败:', error));
+    }
+  }, [settings, isLoading]);
+
+  // 当 players 改变时，保存到 LocalStorage 和 Supabase
   useEffect(() => {
     saveToLocalStorage(STORAGE_KEYS.PLAYERS, players);
-  }, [players]);
+
+    // 同步到 Supabase
+    if (!isLoading && players.length >= 2) {
+      playerService.updatePlayerInfo(
+        players[0].name,
+        players[0].avatar,
+        players[1].name,
+        players[1].avatar
+      ).catch(error => console.error('更新玩家信息失败:', error));
+    }
+  }, [players, isLoading]);
 
   // 当标签页改变时重置游戏屏幕
   useEffect(() => {
@@ -238,23 +301,24 @@ export default function App() {
         <ProfileScreen
           players={players}
           settings={settings}
-          onUpdate={() => {
-            setInitializationDone(false);
-            setTimeout(() => setInitializationDone(true), 500);
-          }}
+          setSettings={setSettings}
+          onUpdate={() => { }}
         />
       );
     }
   };
 
-  if (!initializationDone) {
+  if (isLoading) {
     return <LoadingFallback />;
   }
 
   return (
     <>
-      <div className="max-w-md mx-auto bg-white min-h-screen relative">
-        {renderScreen()}
+      <div className="max-w-md mx-auto bg-white min-h-screen relative flex flex-col">
+        {/* 主内容区域 - 有底部 padding 给 TabBar */}
+        <div className="flex-1 overflow-y-auto pb-24">
+          {renderScreen()}
+        </div>
 
         {/* Task Result Modal - Only in CHESS_GAME mode */}
         {currentScreen === 'CHESS_GAME' && activeTask && (
@@ -271,9 +335,11 @@ export default function App() {
           onClose={() => setShowSettingsModal(false)}
           players={players}
           setPlayers={setPlayers}
+          settings={settings}
+          setSettings={setSettings}
         />
 
-        {/* TabBar Navigation */}
+        {/* TabBar Navigation - 固定在底部 */}
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </>
